@@ -1,0 +1,30 @@
+{
+  "source": "https://huggingface.co/datasets/xiaomingneu/tau3-qwen35-4b-retail-baseline",
+  "source_commit": "1901a301961cbbe3fd11f3e84a2a376530c759e3",
+  "trajectory_sha256": "2b997e4a15d7c584a1c08c50f1f1f5b87cc3dd5424aa345529a26ae8485fd311",
+  "database_sha256": "413a65160adbdb5fde0ffc0015c49b6d70250b10c18128de169b597af7766765",
+  "selection": "Trial 0; SHA-256 task ordering; round-robin scenario tags. Independent of benchmark performance. Tags are keyword-based coverage aids, not quality labels.",
+  "count": 50,
+  "coverage": {
+    "Exchanges": 22,
+    "Order changes": 37,
+    "Address & account": 14,
+    "Conditional requests": 29,
+    "Multi-intent": 18,
+    "Product & order info": 17,
+    "Changed intent": 5,
+    "Returns": 20,
+    "Policy boundaries": 9,
+    "Cancellations": 14
+  },
+  "excluded": [
+    "reward_info",
+    "evaluation_criteria",
+    "review",
+    "user_only_review",
+    "auth_classification",
+    "hallucination_check",
+    "raw_data",
+    "generation usage and costs"
+  ]
+}

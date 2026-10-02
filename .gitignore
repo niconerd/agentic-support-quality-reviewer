@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.cache/
+data/*.sqlite*
+data/evaluation-summary.json
+data/conversation-retry.json
+.DS_Store

@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#152d2c">
+  <title>Support Quality · Reviewer</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css?v=20261002-documentation">
+  <script src="/static/json-view.js" defer></script>
+  <script src="/static/app.js?v=20261002-documentation" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <aside class="sidebar">
+    <a class="brand" href="#overview" aria-label="Reviewer overview"><span class="brandmark">r<span>•</span></span><span>Reviewer<span class="brand-sub">SUPPORT QUALITY</span></span></a>
+    <nav aria-label="Main navigation">
+      <a href="#overview" data-nav="overview"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Overview</a>
+      <a href="#results" data-nav="results"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Results<span id="nav-count" class="nav-count">50</span></a>
+      <a href="#methodology" data-nav="methodology"><svg viewBox="0 0 24 24"><path d="M12 5c-3-3-7-2-9-1v15c3-2 6-2 9 0 3-2 6-2 9 0V4c-3-1-6-2-9 1Zm0 0v14"/></svg>Methodology</a>
+      <a href="#documentation" data-nav="documentation"><svg viewBox="0 0 24 24"><path d="M14 3H5v18h14V8Z M14 3v5h5 M8 12h8 M8 16h8"/></svg>Documentation</a>
+    </nav>
+  </aside>
+  <div class="main-shell">
+    <main id="main" tabindex="-1"><div class="loading">Loading…</div></main>
+  </div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <dialog id="run-dialog">
+    <form id="run-form">
+      <div class="dialog-heading"><div><h2>Start a review run</h2></div><button type="button" class="icon-button" data-close="run-dialog" aria-label="Close">×</button></div>
+      <div id="key-notice" class="notice"></div>
+      <dl class="run-settings"><div><dt>Model</dt><dd id="configured-model"></dd></div></dl>
+      <div class="configured-pricing"><p class="muted">Pricing · USD per million tokens</p><dl class="price-grid run-settings"><div><dt>Input</dt><dd id="configured-input-price"></dd></div><div><dt>Cached input</dt><dd id="configured-cached-price"></dd></div><div><dt>Output</dt><dd id="configured-output-price"></dd></div></dl></div>
+      <label>Batch size<select id="batch-size"><option value="50">50 conversations</option><option value="10">10 conversations</option><option value="1">1 conversation · smoke test</option></select></label>
+      <div class="dialog-actions"><button type="button" class="button secondary" data-close="run-dialog">Cancel</button><button class="button primary" id="start-run" type="submit">Start evaluation <span>↗</span></button></div>
+    </form>
+  </dialog>
+  <dialog id="evidence-dialog"><div class="dialog-heading"><div><div class="eyebrow">SOURCE EVIDENCE</div><h2>Trace the judgment</h2></div><button class="icon-button" data-close="evidence-dialog" aria-label="Close evidence">×</button></div><code id="evidence-path"></code><pre id="evidence-source"></pre></dialog>
+  <dialog id="raw-case-dialog" aria-labelledby="raw-case-title"><div class="dialog-heading"><div><h2 id="raw-case-title">Case raw data</h2><p class="muted" id="raw-case-caption"></p></div><button type="button" class="icon-button" data-close="raw-case-dialog" aria-label="Close raw case data" autofocus>×</button></div><div id="raw-case-json" tabindex="0" role="region" aria-label="Dataset case JSON"></div></dialog>
+  <dialog id="prompt-dialog" aria-labelledby="prompt-title">
+    <div class="dialog-heading"><h2 id="prompt-title">Evaluation prompt</h2><button type="button" class="icon-button" data-close="prompt-dialog" aria-label="Close evaluation prompt" autofocus>×</button></div>
+    <p class="muted">This check runs in its own API call. Below are its rubric and the exact instructions used in new evaluations; the conversation evidence is supplied separately.</p>
+    <div id="prompt-rubric" class="json-view" tabindex="0" role="region" aria-label="Selected evaluation rubric"></div>
+    <details id="prompt-full"><summary>View complete prompt for this check</summary><pre id="prompt-source" tabindex="0"></pre></details>
+  </dialog>
+<template id="documentation-content">
+<div class="page-heading"><h1>Documentation</h1></div>
+<div class="documentation-panels">
+<details class="panel document-panel" name="documentation">
+<summary>PRD</summary>
+<article class="prd-document">
+<h2>Agentic Support Quality Reviewer — MVP PRD</h2>
+<h2>1. Objective</h2>
+<p>Build a small working prototype that reviews customer-support conversations and surfaces a focused set of quality signals.</p>
+<p>The goal of the MVP is not to reproduce the evaluation logic of an existing benchmark. Instead, it uses realistic customer-service scenarios and system ground truth as evidence, while defining its own view of what makes a conversation high quality.</p>
+<p>The product should answer a simple question:</p>
+<p><strong>Was this customer interaction correct, compliant, truthful, and appropriately communicated?</strong></p>
+<hr>
+<h2>2. Problem</h2>
+<p>Customer-support conversations contain multiple dimensions of quality that are difficult to assess consistently at scale.</p>
+<p>Task completion alone is insufficient. An interaction may achieve the desired backend state while still:</p>
+<ul>
+<li>violating a business policy;</li>
+<li>communicating information that is not supported by system state;</li>
+<li>poorly explaining the resolution to the customer.</li>
+</ul>
+<p>Conversely, an interaction may correctly deny a customer request because policy requires it and still represent a high-quality outcome.</p>
+<p>The Reviewer should therefore evaluate conversation quality across a small set of independent dimensions rather than collapse everything into a single task-success metric.</p>
+<hr>
+<h2>3. Dataset</h2>
+<h3>Source</h3>
+<p>The MVP will use <strong>50 τ³ Retail cases</strong>.</p>
+<p>τ³ provides realistic retail customer-service scenarios involving conversations, business policies, tool usage, and mutable backend state.</p>
+<h3>What we keep</h3>
+<p>For each selected case, the Reviewer dataset will retain only information that represents the scenario and observable ground truth:</p>
+<ul>
+<li>customer scenario / objective;</li>
+<li>relevant business policy;</li>
+<li>initial system state;</li>
+<li>customer and agent transcript;</li>
+<li>tool calls and arguments;</li>
+<li>tool responses;</li>
+<li>final system state.</li>
+</ul>
+<h3>What we intentionally exclude</h3>
+<p>The MVP will not ingest or expose τ³&#x27;s own evaluation outcome, including:</p>
+<ul>
+<li>benchmark reward;</li>
+<li>benchmark pass/fail;</li>
+<li>aggregate score;</li>
+<li>reference quality judgment;</li>
+<li>benchmark-generated conversation-quality labels.</li>
+</ul>
+<p>τ³ is therefore used as <strong>a source of realistic cases and system truth, not as the evaluator</strong>.</p>
+<h3>Case selection</h3>
+<p>The 50 cases should be selected for conversational and functional diversity rather than benchmark performance.</p>
+<p>Target coverage includes:</p>
+<ul>
+<li>returns;</li>
+<li>exchanges;</li>
+<li>order modifications;</li>
+<li>cancellations;</li>
+<li>account or address changes;</li>
+<li>product/order information;</li>
+<li>conditional requests;</li>
+<li>multi-intent conversations;</li>
+<li>policy-boundary cases;</li>
+<li>cases where customers change their mind during the interaction.</li>
+</ul>
+<hr>
+<h2>4. Quality Framework</h2>
+<p>The MVP evaluates each conversation against four signals.</p>
+<h3>4.1 Resolution Correctness</h3>
+<p><strong>Question:</strong> Did the interaction produce the appropriate customer outcome?</p>
+<p>The Reviewer considers:</p>
+<ul>
+<li>the customer&#x27;s actual objective;</li>
+<li>actions performed;</li>
+<li>tool results;</li>
+<li>final system state.</li>
+</ul>
+<h4>Possible results</h4>
+<p><strong>RESOLVED</strong>
+The customer&#x27;s request was correctly completed and the final state matches the intended outcome.</p>
+<p><strong>PARTIALLY RESOLVED</strong>
+Some, but not all, of the customer&#x27;s objective was completed correctly.</p>
+<p><strong>CORRECTLY REFUSED</strong>
+The requested outcome was not executed because policy or system constraints required refusal, and the refusal itself was appropriate.</p>
+<p><strong>CORRECTLY ESCALATED</strong>
+The issue could not or should not be completed by the agent, and escalation was the appropriate resolution path.</p>
+<p><strong>UNRESOLVED</strong>
+The customer&#x27;s objective remains unmet and there is no valid completion, refusal, or escalation.</p>
+<p><strong>FALSELY CLAIMS RESOLUTION</strong>
+The interaction states or implies that the issue was resolved, but system evidence shows that the expected outcome did not occur.</p>
+<p>This dimension focuses on the outcome, not whether a predefined tool sequence was reproduced.</p>
+<hr>
+<h3>4.2 Policy Compliance</h3>
+<p><strong>Question:</strong> Did the agent act according to the applicable business rules?</p>
+<p>The Reviewer compares the conversation and agent actions against the Retail policy.</p>
+<p>Examples include:</p>
+<ul>
+<li>required authentication;</li>
+<li>customer confirmation before consequential actions;</li>
+<li>allowed or prohibited operations;</li>
+<li>authorization boundaries;</li>
+<li>appropriate escalation.</li>
+</ul>
+<h4>Possible results</h4>
+<p><strong>COMPLIANT</strong>
+All relevant policy requirements were respected.</p>
+<p><strong>NON-COMPLIANT</strong>
+One or more policy requirements were not followed, but the issue did not involve a critical safeguard.</p>
+<p><strong>CRITICAL NON-COMPLIANCE</strong>
+A critical policy safeguard was not respected, such as unauthorized disclosure, unauthorized action, or bypassing a required protection with material customer or business risk.</p>
+<p>An interaction can therefore achieve the desired final state while still failing Policy Compliance.</p>
+<hr>
+<h3>4.3 Factual Correctness</h3>
+<p><strong>Question:</strong> Are the agent&#x27;s statements supported by the available evidence?</p>
+<p>Agent claims are checked against:</p>
+<ul>
+<li>customer-provided information;</li>
+<li>tool responses;</li>
+<li>system state;</li>
+<li>known business rules.</li>
+</ul>
+<p>Examples:</p>
+<ul>
+<li>refund amount stated by agent differs from tool result;</li>
+<li>agent claims an action succeeded when the system shows it failed;</li>
+<li>agent communicates an unsupported policy or outcome.</li>
+</ul>
+<h4>Possible results</h4>
+<p><strong>CORRECT</strong>
+The agent&#x27;s material factual statements are supported by available evidence.</p>
+<p><strong>INACCURATE</strong>
+One or more factual statements are unsupported or incorrect, but do not directly contradict authoritative system evidence in a material way.</p>
+<p><strong>CONTRADICTED BY SYSTEM EVIDENCE</strong>
+The agent explicitly states something that directly conflicts with tool results or system state.</p>
+<p>This dimension evaluates whether the customer can trust what the agent is being told.</p>
+<hr>
+<h3>4.4 Communication Appropriateness</h3>
+<p><strong>Question:</strong> Did the agent communicate in a way that was appropriate for the customer and situation?</p>
+<p>Communication should be:</p>
+<ul>
+<li><strong>clear:</strong> the customer can understand what is happening and what happens next;</li>
+<li><strong>concise:</strong> avoids unnecessary verbosity or repetition;</li>
+<li><strong>professional:</strong> respectful and appropriate for a support interaction;</li>
+<li><strong>context-aware:</strong> reasonably adapts to customer frustration, urgency, or communication style.</li>
+</ul>
+<p>The Reviewer should not require explicit empathy, greetings, or lengthy explanations when they add no value.</p>
+<p>Behavior required by policy should not be penalized as poor communication simply because it creates additional customer effort.</p>
+<h4>Possible results</h4>
+<p><strong>APPROPRIATE</strong>
+Communication is clear, concise, professional, and suitably adapted to the customer&#x27;s context.</p>
+<p><strong>NEEDS IMPROVEMENT</strong>
+The interaction remains understandable and professional, but has noticeable issues such as ambiguity, unnecessary verbosity, weak adaptation, or minor tone problems.</p>
+<p><strong>INAPPROPRIATE</strong>
+Communication is materially confusing, dismissive, unprofessional, excessively verbose, or poorly adapted to the customer&#x27;s situation.</p>
+<hr>
+<h2>5. Output</h2>
+<p>For each conversation, the Reviewer returns a result for the four dimensions.</p>
+<p>Example:</p>
+<pre><code>Resolution Correctness          RESOLVED
+Policy Compliance               NON-COMPLIANT
+Factual Correctness             CORRECT
+Communication Appropriateness   NEEDS IMPROVEMENT</code></pre>
+<p>Each non-passing result should include:</p>
+<ul>
+<li>concise explanation;</li>
+<li>supporting evidence from the conversation, tool activity, state, or policy;</li>
+<li>severity where relevant.</li>
+</ul>
+<p>The MVP should prioritize explainability over an opaque aggregate score.</p>
+<p>A single overall quality score is intentionally excluded.</p>
+<hr>
+<h2>6. Product Principles</h2>
+<h3>Evidence over impression</h3>
+<p>Whenever objective evidence exists — state, tools, or policy — the Reviewer should ground its judgment in that evidence rather than rely purely on LLM interpretation.</p>
+<h3>Quality is multidimensional</h3>
+<p>A technically successful interaction is not necessarily a high-quality interaction.</p>
+<p>Resolution, compliance, factuality, and communication should remain independently observable.</p>
+<h3>Do not force one &quot;correct&quot; trajectory</h3>
+<p>Multiple action sequences may produce valid outcomes.</p>
+<p>The Reviewer evaluates the customer&#x27;s objective, policy constraints, actual behavior, and final state rather than requiring the agent to reproduce a reference sequence.</p>
+<h3>Explain every negative judgment</h3>
+<p>A user reviewing QA results should be able to understand why the Reviewer flagged an interaction.</p>
+<hr>
+<h2>7. Implementation Details</h2>
+<h3>Technology Stack</h3>
+<p>The MVP will use a lightweight stack:</p>
+<ul>
+<li><strong>Python</strong> as the application language.</li>
+<li><strong>uv</strong> for Python environment and dependency management.</li>
+<li><strong>FastAPI</strong> for the application/API layer.</li>
+<li><strong>SQLite</strong> for local persistence.</li>
+<li><strong>OpenAI API</strong> for conversation evaluation against the four quality criteria.</li>
+<li>A lightweight web UI for reviewing batch and conversation-level results.</li>
+</ul>
+<p>The implementation should remain intentionally local and simple. The goal is to demonstrate the evaluation product and architecture rather than production infrastructure.</p>
+<h3>Evaluation Flow</h3>
+<p>Each normalized τ³ Retail case is persisted locally and submitted to the Reviewer.</p>
+<p>The evaluation pipeline receives:</p>
+<pre><code>Customer objective
+Business policy
+Initial state
+Conversation transcript
+Tool calls + results
+Final state
+        ↓
+OpenAI evaluation
+        ↓
+Structured result
+        ↓
+SQLite
+        ↓
+Reviewer UI</code></pre>
+<p>The model should produce structured outputs for all four criteria, including:</p>
+<ul>
+<li>result;</li>
+<li>explanation;</li>
+<li>supporting evidence.</li>
+</ul>
+<p>Evaluation-run metadata should also be persisted so results can be inspected alongside their inference characteristics.</p>
+<h3>Application Structure</h3>
+<p>The UI should remain minimal and consist of three primary pages/tabs.</p>
+<h4>Overview</h4>
+<p>Provides the high-level view of an evaluation run.</p>
+<p>It should show aggregate metrics for each quality criterion across the evaluated batch.</p>
+<p>Examples include:</p>
+<ul>
+<li>distribution of Resolution Correctness outcomes;</li>
+<li>percentage of conversations that are Compliant / Non-Compliant / Critical Non-Compliance;</li>
+<li>distribution of Factual Correctness;</li>
+<li>distribution of Communication Appropriateness.</li>
+</ul>
+<p>Visualizations should make it easy to understand where the main quality issues are across the 50-conversation batch.</p>
+<p>The Overview should also expose <strong>run-level observability metrics</strong>:</p>
+<ul>
+<li>model used;</li>
+<li>number of conversations evaluated;</li>
+<li>input tokens;</li>
+<li>output tokens;</li>
+<li>total tokens;</li>
+<li>average / total latency;</li>
+<li>estimated API cost.</li>
+</ul>
+<p>These metrics describe the evaluation system itself rather than conversation quality and should therefore remain visually separate from the four quality criteria.</p>
+<h4>Results</h4>
+<p>Displays all evaluated interactions.</p>
+<p>The main view should make it possible to scan results and identify conversations that deserve inspection.</p>
+<p>Each row should expose at least:</p>
+<ul>
+<li>conversation / case identifier;</li>
+<li>scenario or interaction type;</li>
+<li>Resolution Correctness;</li>
+<li>Policy Compliance;</li>
+<li>Factual Correctness;</li>
+<li>Communication Appropriateness.</li>
+</ul>
+<p>The table should support filtering by evaluation results, allowing users to answer questions such as:</p>
+<ul>
+<li>show all Non-Compliant conversations;</li>
+<li>show all cases Contradicted by System Evidence;</li>
+<li>show unresolved conversations;</li>
+<li>show conversations where Communication Appropriateness Needs Improvement.</li>
+</ul>
+<p>Selecting a result should open a conversation-level view containing:</p>
+<ul>
+<li>customer objective;</li>
+<li>transcript;</li>
+<li>tool interactions where relevant;</li>
+<li>four evaluation results;</li>
+<li>explanations and supporting evidence;</li>
+<li>relevant policy or state evidence when used by the Reviewer.</li>
+</ul>
+<h4>Methodology</h4>
+<p>A static explanatory page describing how the Reviewer defines quality.</p>
+<p>It should document the four criteria:</p>
+<ol>
+<li><strong>Resolution Correctness</strong></li>
+<li><strong>Policy Compliance</strong></li>
+<li><strong>Factual Correctness</strong></li>
+<li><strong>Communication Appropriateness</strong></li>
+</ol>
+<p>For each criterion, the page should show:</p>
+<ul>
+<li>the question the criterion answers;</li>
+<li>what evidence it uses;</li>
+<li>its possible outcomes;</li>
+<li>a concise explanation of how the Reviewer interprets them.</li>
+</ul>
+<p>The page should also communicate the core methodology:</p>
+<p><strong>τ³ provides the scenario and system ground truth; the Agentic Support Quality Reviewer independently defines and evaluates quality.</strong></p>
+<h3>Run Model</h3>
+<p>A batch evaluation should be treated as a distinct <strong>run</strong>.</p>
+<p>A run groups:</p>
+<ul>
+<li>the selected conversations;</li>
+<li>model configuration;</li>
+<li>evaluation results;</li>
+<li>token usage;</li>
+<li>latency;</li>
+<li>cost;</li>
+<li>timestamp.</li>
+</ul>
+<p>This allows the prototype to distinguish between <strong>conversation-level quality metrics</strong> and <strong>evaluation-system performance metrics</strong>, and leaves a natural path for later comparing models or prompt versions without expanding the MVP scope.</p>
+</article>
+</details>
+<details class="panel document-panel" name="documentation">
+<summary>Tradeoff notes</summary>
+<article class="prd-document" aria-labelledby="tradeoffs-title">
+<h2 id="tradeoffs-title">Conversation Quality Reviewer — Tradeoffs Note</h2>
+<h3>Why these metrics</h3>
+<p>I chose four signals that together cover whether the customer’s problem was solved, whether it was solved correctly, and whether the interaction represented the company appropriately.</p>
+<p><strong>Resolution Correctness</strong> — The core purpose of the interaction is to solve the customer’s problem. This metric matters because a conversation can sound good while still failing to deliver the outcome the customer actually needed.</p>
+<p><strong>Policy Compliance</strong> — Solving the problem is not enough; it needs to be solved within the company’s policies and procedures. This ensures the agent respects the boundaries and required steps associated with each type of request.</p>
+<p><strong>Factual Correctness</strong> — The customer should be able to trust that what the agent says reflects what actually happened or is actually true. If the agent says a refund was issued, an account was updated, or a policy applies, that statement needs to be correct. This is critical for meeting customer expectations and avoiding follow-up failures.</p>
+<p><strong>Communication Appropriateness</strong> — The agent is also representing the company and its brand. Communication should therefore be clear, professional, relevant, and appropriate to the situation, so that the interaction adds value rather than creating confusion or damaging trust.</p>
+<h3>What I would harden for production</h3>
+<p>The biggest area to harden is the <strong>evaluation system around the evaluator</strong>.</p>
+<p>During the prototype, changes such as switching models or moving from one shared prompt to separate prompts per metric produced noticeable differences in the results. Before production, those choices should be versioned, regression-tested, and compared against a stable benchmark.</p>
+<p>Most importantly, I would build a <strong>representative dataset with solid human-reviewed labels</strong> for each metric. That becomes the reference point for calibrating prompts and models, measuring agreement, and deciding whether changes actually improve evaluation quality.</p>
+<h3>How I would know it is working</h3>
+<p>First, I would validate that the evaluator is <strong>technically reliable</strong> by comparing its outputs against a human-reviewed benchmark and tracking agreement across the different metrics and representative conversation slices.</p>
+<p>More importantly, I would measure whether the evaluation actually helps the customer <strong>improve their agent system</strong>: whether it identifies useful failure patterns, leads to changes in prompts, policies, workflows, or coaching, and whether those changes improve conversation outcomes over time.</p>
+<p>The goal is not just to produce accurate scores, but to create a feedback loop that helps the system get better.</p>
+<h3>Corners I intentionally cut</h3>
+<p>I intentionally relied heavily on the <strong>LLM as reviewer</strong>. I iterated on the prompts and outputs, but I did not extensively validate whether each prompt, scoring scale, or evaluation method was the best possible way to measure that metric. I mostly trusted the LLM’s reviews rather than calibrating them against a representative human-reviewed sample.</p>
+<p>I also chose not to build a detailed, domain-specific taxonomy of failure categories and subcategories. That could make the output more structured and actionable, but would add significant complexity to the rubric and evaluation process. For the prototype, I prioritized <strong>simple, understandable categories</strong>.</p>
+<p>I also did not implement production-grade <strong>PII handling, access controls, evaluator versioning, monitoring, retries, cost controls, or model fallback</strong>.</p>
+</article>
+</details>
+</div>
+</template>
+</body>
+</html>
